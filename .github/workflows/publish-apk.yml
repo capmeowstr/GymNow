@@ -1,0 +1,44 @@
+name: Publish Gym Now v0.3.2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-apk.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gym-now-v0.3.2-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'capmeowstr/GymNow'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Attach the verified APK to v0.3.2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_REF: f4983bbaa09e1d105669b855a08491921957ad29
+          APK_SHA256: f35540f3c57404b75147d5ff657f5230dcc1c158647567a450bb1389fae9abfc
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v0.3.2 --repo "$GITHUB_REPOSITORY" --json tagName >/dev/null 2>&1; then
+            exit 0
+          fi
+          apk=Gym_Now_v0_3_2.apk
+          gh api -H 'Accept: application/vnd.github.raw+json' \
+            "repos/$GITHUB_REPOSITORY/contents/downloads/$apk?ref=$RELEASE_REF" > "$apk"
+          printf '%s  %s\n' "$APK_SHA256" "$apk" | sha256sum --check
+          cat > release-notes.md <<'NOTES'
+          - Hand-drawn launcher icon and an illustrated quick start.
+          - Supports Android 8.0 and later.
+          - Supports fresh installs and updates from the published v0.3.0 APK.
+          - The v0.3.1 build uses a different signing key and requires that key for in-place updates.
+          NOTES
+          gh release create v0.3.2 "$apk" --repo "$GITHUB_REPOSITORY" \
+            --target "$RELEASE_REF" --title "Gym Now v0.3.2" --notes-file release-notes.md
