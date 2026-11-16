@@ -101,22 +101,6 @@ Pending markers are scoped to the authenticated account and slot. An uncertain
 booking result is not automatically reposted, including after sign-in renewal.
 No membership purchases are made. Door unlocking stays on Ark's page.
 
-## Validation and limits
-
-The current public Ark client and unauthenticated login-flow response were
-inspected on 5 November 2026. The latter returned a POST login action, CSRF
-field, identifier field and password field; no CAPTCHA appeared in that flow.
-
-The bundled tests cover booking, login, navigation rules, and encryption.
-Browser-only door tests are available in the source and use local fixtures
-with Chromium.
-
-**This build has not been installed on a physical Android phone or tested with
-a successful real Ark account login.** Offline tests and a public login-flow
-inspection cannot prove live phone behavior. No real user password was used,
-no real gym booking was created and no door was unlocked during development.
-Ark may require additional verification or change its login protocol later.
-
 ## Build from source
 
 Requirements: Linux x86-64, Java/JDK 17+, Python 3 and Node.js.

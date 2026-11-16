@@ -1,6 +1,6 @@
 # Gym Now
 
-**One-tap booking for Ark Grit gyms.** Gym Now reuses your current booking or books the current slot, then opens Ark’s entry page.
+**Save time with one-click booking for Ark Grit gyms.** Gym Now reuses your current booking or books the current slot, then opens Ark’s entry page.
 
 [**Download APK v0.3.2**](https://github.com/capmeowstr/GymNow/releases/download/v0.3.2/Gym_Now_v0_3_2.apk) · [Release notes](https://github.com/capmeowstr/GymNow/releases/tag/v0.3.2)
 
