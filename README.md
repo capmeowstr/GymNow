@@ -7,7 +7,7 @@ Android System WebView.
 
 ## Get the app
 
-[**Download Gym Now v0.3.2 for Android**](downloads/Gym_Now_v0_3_2.apk?raw=true)
+[**Download Gym Now v0.3.2 for Android**](https://github.com/capmeowstr/GymNow/releases/download/v0.3.2/Gym_Now_v0_3_2.apk) · [Release notes](https://github.com/capmeowstr/GymNow/releases/tag/v0.3.2)
 
 This APK supports fresh installs and updates from the v0.3.0 release. The
 v0.3.1 APK used a different signing key, so Android will block an in-place
