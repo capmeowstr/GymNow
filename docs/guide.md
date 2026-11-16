@@ -12,14 +12,16 @@ update from that version.
 
 ## First launch
 
+[Open the illustrated quick start](./gym-now-quick-start.png).
+
 1. Open Gym Now and tap **Use website** at the initial sign-in prompt.
 2. Tap **Gym** and choose your branch before completing sign-in. On a fresh
    v0.3.2 install, Keat Hong is selected by default and booking can resume as
    soon as you sign in.
-3. Sign in with your Ark account. Tap **Book now** if booking has yet to start.
-   Gym Now reuses an existing booking or books the current slot under an
-   eligible subscription. When Ark’s entry page opens, tap **Unlock** there
-   once you reach the door.
+3. Sign in with your Ark account on the page below the Gym Now buttons.
+4. Tap **Book now** if booking hasn’t started. Gym Now reuses an existing
+   booking or books the current slot under an eligible subscription. When
+   Ark’s entry page opens, tap **Unlock** once you reach the door.
 
 ## Account and entry
 

@@ -10,8 +10,8 @@ Unofficial app for Android 8.0+ · Ark Grit account and eligible gym subscriptio
 
 ## Quick start
 
-[Set your gym before signing in on v0.3.2](./docs/guide.md#first-launch) · [Open the comic](./docs/gym-now-quick-start.png)
+[Open the full-size comic](./docs/gym-now-quick-start.png) · [Written steps](./docs/guide.md#first-launch)
 
-![Three-panel Gym Now tutorial showing sign-in, gym selection, and Book now](./docs/gym-now-quick-start.png)
+![Four-panel Gym Now comic showing Use website, the Gym picker, Ark sign-in, and Book now](./docs/gym-now-quick-start.png)
 
 [Install and update](./docs/guide.md#install-the-apk) · [Build from source](./docs/guide.md#build-from-source) · [Privacy](./docs/guide.md#credential-storage-and-privacy) · [MIT license for the code](./LICENSE)
