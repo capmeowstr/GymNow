@@ -1,14 +1,23 @@
 # Gym Now for Android — v0.3.2
 
+<img src="res/mipmap-xxxhdpi/ic_gym_now.png" alt="Gym Now’s green door and arrow launcher icon" width="112">
+
 An unofficial Ark Grit gym booking helper for Android 8.0 or later and a current
 Android System WebView. Version 0.3.2 updates the launcher icon.
 
 ## Get the app
 
-The first signed v0.3.2 download is pending. To build an APK with your own
-signing key, follow [Build from source](#build-from-source).
+[**Download Gym Now v0.3.2 for Android**](downloads/Gym_Now_v0_3_2.apk?raw=true)
+
+This APK supports fresh installs and updates from the v0.3.0 release. The
+v0.3.1 APK used a different signing key, so Android will block an in-place
+update from that version.
+
+To build a local APK, follow [Build from source](#build-from-source).
 
 ## Use Gym Now
+
+<img src="docs/gym-now-quick-start.webp" alt="Three-panel Gym Now comic showing sign-in, gym selection, and Book now" width="560">
 
 1. Open Gym Now and sign in with your own Ark account. Choose **Use website** to
    sign in through Ark’s page, or **Save & sign in** to remember your login on
