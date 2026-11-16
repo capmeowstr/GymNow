@@ -1,0 +1,11 @@
+/.signing/
+/build/
+/android-toolchain/
+/node_modules/
+*.apk
+*.jks
+*.p12
+*.keystore
+.env
+.env.*
+__pycache__/
