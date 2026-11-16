@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """Build the small native APK with JDK 17+ and Android SDK tools (no Gradle)."""
+from argparse import ArgumentParser
 from pathlib import Path
-import os, subprocess, zipfile, secrets, shutil, sys, hashlib, urllib.request
+import os, subprocess, zipfile, secrets, shutil, hashlib, urllib.request
+
+parser = ArgumentParser(description=__doc__)
+parser.add_argument('--unsigned', action='store_true', help='Build an aligned APK for release signing.')
+args = parser.parse_args()
 
 root = Path(__file__).resolve().parent
 tools = Path(os.environ.get('GYM_NOW_TOOLCHAIN', root.parent / 'android-toolchain')).resolve()
 build = root / 'build'
 build.mkdir(exist_ok=True)
-output = root.parent / 'Gym_Now_v0_3_2.apk'
+output = root.parent / ('Gym_Now_v0_3_3-unsigned.apk' if args.unsigned else 'Gym_Now_v0_3_3.apk')
 
 def run(*args):
     subprocess.run([str(a) for a in args], cwd=root, check=True)
@@ -57,17 +62,21 @@ shutil.copyfile(build/'resources.apk',build/'unsigned.apk')
 with zipfile.ZipFile(build/'unsigned.apk','a',zipfile.ZIP_DEFLATED) as z:
     for dex in sorted((build/'dex').glob('*.dex')): z.write(dex,dex.name)
 run(bt/'zipalign','-p','-f','4',build/'unsigned.apk',build/'aligned.apk')
-signing = root / '.signing'
-signing.mkdir(mode=0o700,exist_ok=True)
-password = signing / 'password.txt'
-key = signing / 'gym-now.p12'
-if not password.exists():
-    password.write_text(secrets.token_urlsafe(36)+'\n'); password.chmod(0o600)
-if not key.exists():
-    run('keytool','-genkeypair','-alias','gym-now','-keystore',key,'-storetype','PKCS12','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Gym Now personal build', '-storepass:file',password,'-keypass:file',password)
-    key.chmod(0o600)
-run(bt/'apksigner','sign','--ks',key,'--ks-key-alias','gym-now','--ks-pass','file:'+str(password),'--v4-signing-enabled','false','--out',output,build/'aligned.apk')
-run(bt/'apksigner','verify','--verbose','--print-certs',output)
+if args.unsigned:
+    shutil.copyfile(build/'aligned.apk', output)
+else:
+    signing = root / '.signing'
+    signing.mkdir(mode=0o700,exist_ok=True)
+    password = signing / 'password.txt'
+    key = signing / 'gym-now.p12'
+    if not password.exists():
+        password.write_text(secrets.token_urlsafe(36)+'\n')
+        password.chmod(0o600)
+    if not key.exists():
+        run('keytool','-genkeypair','-alias','gym-now','-keystore',key,'-storetype','PKCS12','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Gym Now personal build', '-storepass:file',password,'-keypass:file',password)
+        key.chmod(0o600)
+    run(bt/'apksigner','sign','--ks',key,'--ks-key-alias','gym-now','--ks-pass','file:'+str(password),'--v4-signing-enabled','false','--out',output,build/'aligned.apk')
+    run(bt/'apksigner','verify','--verbose','--print-certs',output)
 run(bt/'zipalign','-c','-v','4',output)
 print('APK:',output)
 print('APK SHA-256:',hashlib.sha256(output.read_bytes()).hexdigest())

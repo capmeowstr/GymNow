@@ -17,6 +17,10 @@ public class AppPolicyTest {
         check(!AppPolicy.officialNavigation("file:///sdcard/file.html"));
         check(AppPolicy.validOutlet("AGRKHG01"));
         check(!AppPolicy.validOutlet("AGRKHG01/../../"));
+        check(AppPolicy.bookingStartUrl(null) == null);
+        check(AppPolicy.bookingStartUrl("") == null);
+        check(AppPolicy.bookingStartUrl("AGRKHG01&pass=another") == null);
+        check(AppPolicy.bookingStartUrl("AGRBIS01").equals("https://arkkies.com/portal/outlet?outlet-id=AGRBIS01"));
         check(AppPolicy.validBookingId("445749"));
         check(AppPolicy.validBookingId("cbdaf5e0-497f-455b-8178-8562d20a4932"));
         check(!AppPolicy.validBookingId("../login"));

@@ -19,7 +19,10 @@ function fixture(unauthenticated) {
   Object.defineProperty(location, 'href', {set: value => {
     const url = new URL(value);
     const event = {type:url.searchParams.get('type'), value:url.searchParams.get('value')}; events.push(event);
-    if (event.type === 'passes') queueMicrotask(() => listeners.get('gym-now-pass')({detail:{token:'run-token',id:'subscription-b'}}));
+    if (event.type === 'passes') {
+      const token = url.searchParams.get('token');
+      queueMicrotask(() => listeners.get('gym-now-pass')({detail:{token,id:'subscription-b'}}));
+    }
   }});
   const context = vm.createContext({
     GYM_NOW_CONFIG: {outlet:'AGRKHG01',gymName:'Keat Hong',passId:'',token:'run-token'},
@@ -56,6 +59,14 @@ test('composed Android script requests official sign-in when the session expires
   const f = fixture(true); await vm.runInContext(script,f.context);
   assert.ok(f.events.some(e=>e.type==='auth'));
   assert.equal(f.calls.filter(c=>c.options.method==='POST').length,0);
+});
+test('reopening the app reuses the verified booking without posting again', async () => {
+  const f = fixture(false);
+  await vm.runInContext(script, f.context);
+  f.context.GYM_NOW_CONFIG.token = 'reopen-token';
+  await vm.runInContext(script, f.context);
+  assert.equal(f.calls.filter(c => c.options.method === 'POST').length, 1);
+  assert.deepEqual(f.events.filter(e => e.type === 'done').map(e => e.value), ['booking-b', 'booking-b']);
 });
 test('a session for a different account cannot book using a saved login account', async () => {
   const f = fixture(false); f.context.GYM_NOW_CONFIG.expectedIdentity = 'saved-user-a';

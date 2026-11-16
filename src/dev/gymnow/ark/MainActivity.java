@@ -48,6 +48,7 @@ public final class MainActivity extends Activity {
     private TextView subtitle;
     private Button go, gymButton, accountButton, entryButton;
     private ProgressBar progress;
+    private AlertDialog gymDialog;
     private boolean busy, wantRun, pageReady, destroyed, selectingDoor, doorCheckInFlight;
     private boolean signingIn, loginStarted, automaticLoginTried, manualLogin, loginDialogVisible;
     private String runToken = "", lastEntry = "", script, entryScript, loginScript;
@@ -72,8 +73,7 @@ public final class MainActivity extends Activity {
             loginScript = asset("login.js");
         }
         catch (Exception error) { showError("App files could not be loaded. Reinstall Gym Now."); return; }
-        if (!prefs.getBoolean("savedLoginSetupSeen", false) && !vault.hasLogin()) showSavedLoginDialog(true, "");
-        else begin();
+        begin();
         handler.postDelayed(poll, 1000);
     }
 
@@ -162,27 +162,39 @@ public final class MainActivity extends Activity {
         });
     }
 
-    private String outlet() { return prefs.getString("outlet", "AGRKHG01"); }
+    private String outlet() { return prefs.getString("outlet", ""); }
     private String gymName() {
-        for (String[] pair : GYMS) if (pair[0].equals(outlet())) return pair[1];
-        return outlet();
+        String selected = outlet();
+        for (String[] pair : GYMS) if (pair[0].equals(selected)) return pair[1];
+        return AppPolicy.validOutlet(selected) ? selected : "Choose gym";
     }
     private void updateSubtitle() { subtitle.setText(gymName() + " · Official sign-in: arkkies.com · Unofficial helper"); }
     private void setBusy(boolean value) {
-        busy = value; go.setEnabled(!value && !signingIn); gymButton.setEnabled(!value && !signingIn); accountButton.setEnabled(!value && !signingIn);
+        busy = value;
+        go.setEnabled(!value && !signingIn && AppPolicy.validOutlet(outlet()));
+        gymButton.setEnabled(!value && !signingIn);
+        accountButton.setEnabled(!value && !signingIn);
         progress.setVisibility(value || wantRun || selectingDoor || signingIn ? View.VISIBLE : View.GONE);
     }
     private void begin() {
-        if (busy || signingIn || loginDialogVisible || destroyed) return;
+        if (busy || signingIn || loginDialogVisible || gymDialog != null || destroyed) return;
         automaticLoginTried = false;
         resumeBooking();
     }
     private void resumeBooking() {
+        String url = AppPolicy.bookingStartUrl(outlet());
+        if (url == null) {
+            wantRun = false;
+            setBusy(false);
+            status.setText("Choose your gym before booking.");
+            selectGym();
+            return;
+        }
         selectingDoor = false; entryStarted = 0;
         lastEntry = ""; entryButton.setEnabled(false); wantRun = true; pageReady = false;
         runToken = UUID.randomUUID().toString();
         status.setText("Opening Ark for " + gymName() + "…"); setBusy(false);
-        web.loadUrl("https://arkkies.com/portal/outlet?outlet-id=" + outlet());
+        web.loadUrl(url);
     }
     private final Runnable poll = new Runnable() {
         @Override public void run() {
@@ -201,7 +213,8 @@ public final class MainActivity extends Activity {
         }
     };
     private void maybeRun() {
-        if (!wantRun || busy || signingIn || loginDialogVisible || !pageReady || destroyed) return;
+        if (!wantRun || busy || signingIn || loginDialogVisible || gymDialog != null ||
+                !pageReady || destroyed || !AppPolicy.validOutlet(outlet())) return;
         String url = web.getUrl();
         if (!AppPolicy.officialPage(url) || Uri.parse(url).getPath() == null || !Uri.parse(url).getPath().startsWith("/portal")) return;
         wantRun = false; runStarted = System.currentTimeMillis(); setBusy(true);
@@ -294,24 +307,35 @@ public final class MainActivity extends Activity {
         } catch (Exception error) { status.setText("Chrome is unavailable. Remote Entry remains open below."); }
     }
     private void selectGym() {
+        if (busy || signingIn || loginDialogVisible || gymDialog != null || destroyed) return;
         String[] names = new String[GYMS.length + 1];
         for (int i=0; i<GYMS.length; i++) names[i] = GYMS[i][1]; names[GYMS.length] = "Another Ark outlet ID";
-        new AlertDialog.Builder(this).setTitle("Choose gym").setItems(names, (dialog, which) -> {
+        showGymDialog(new AlertDialog.Builder(this).setTitle("Choose gym").setItems(names, (dialog, which) -> {
             if (which < GYMS.length) setGym(GYMS[which][0]);
             else {
                 android.widget.EditText input = new android.widget.EditText(this); input.setSingleLine(true); input.setHint("e.g. AGRKHG01");
-                new AlertDialog.Builder(this).setTitle("Ark outlet ID").setView(input)
+                showGymDialog(new AlertDialog.Builder(this).setTitle("Ark outlet ID").setView(input)
                     .setPositiveButton("Save", (d,w) -> {
                         String value = input.getText().toString().trim().toUpperCase(java.util.Locale.ROOT);
                         if (AppPolicy.validOutlet(value)) setGym(value); else showError("Enter a valid Ark outlet ID.");
-                    }).setNegativeButton("Cancel", null).show();
+                    }).setNegativeButton("Cancel", null).create());
             }
-        }).show();
+        }).create());
+    }
+    private void showGymDialog(AlertDialog dialog) {
+        gymDialog = dialog;
+        dialog.setOnDismissListener(d -> { if (gymDialog == dialog) gymDialog = null; });
+        dialog.show();
     }
     private void setGym(String value) {
+        if (wantRun || selectingDoor) {
+            web.stopLoading();
+            pageReady = false;
+        }
+        wantRun = false; selectingDoor = false; runToken = "";
         prefs.edit().putString("outlet", value).remove("passId").apply(); updateSubtitle();
-        selectingDoor = false; setBusy(false);
         lastEntry = ""; entryButton.setEnabled(false);
+        setBusy(false);
         status.setText("Gym set to " + gymName() + ". Tap Book now when ready.");
     }
     private boolean isLoginPage(String url) {
@@ -330,7 +354,7 @@ public final class MainActivity extends Activity {
         web.loadUrl("https://arkkies.com/login");
     }
     private void maybeLogin() {
-        if (destroyed || !pageReady || loginDialogVisible || !isLoginPage(web.getUrl())) return;
+        if (destroyed || !pageReady || loginDialogVisible || gymDialog != null || !isLoginPage(web.getUrl())) return;
         if (!signingIn) {
             if ((!wantRun && !selectingDoor) || busy || automaticLoginTried || !vault.hasLogin()) return;
             automaticLoginTried = true;
@@ -367,7 +391,7 @@ public final class MainActivity extends Activity {
             if (manualLogin) {
                 try {
                     vault.save(new CredentialVault.Login(loginIdentifier, loginPassword, identity));
-                    prefs.edit().remove("passId").putBoolean("savedLoginSetupSeen", true).apply();
+                    prefs.edit().remove("passId").apply();
                 } catch (Exception error) { saved = false; }
             }
             resetLogin(); CookieManager.getInstance().flush();
@@ -384,7 +408,7 @@ public final class MainActivity extends Activity {
             else status.setText("Ark needs the website login below. Automatic sign-in has stopped; tap Book now after signing in.");
         }
     }
-    private void showSavedLoginDialog(boolean firstSetup, String identifier) {
+    private void showSavedLoginDialog(String identifier) {
         if (loginDialogVisible || busy || signingIn) return;
         loginDialogVisible = true;
         LinearLayout form = new LinearLayout(this); form.setOrientation(LinearLayout.VERTICAL);
@@ -402,23 +426,14 @@ public final class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this); scroll.addView(form);
         AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Remember Ark login")
             .setView(scroll).setPositiveButton("Save & sign in", null)
-            .setNegativeButton(firstSetup ? "Use website" : "Cancel", (d,w) -> {
-                if (firstSetup) {
-                    prefs.edit().putBoolean("savedLoginSetupSeen", true).apply();
-                    loginDialogVisible = false; begin();
-                }
-            }).create();
+            .setNegativeButton("Cancel", null).create();
         dialog.setOnDismissListener(d -> { password.setText(""); loginDialogVisible = false; });
-        if (firstSetup) dialog.setOnCancelListener(d -> {
-            prefs.edit().putBoolean("savedLoginSetupSeen", true).apply(); loginDialogVisible = false; begin();
-        });
         dialog.setOnShowListener(d -> {
             dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 String id = email.getText().toString().trim(), secret = password.getText().toString();
                 if (id.isEmpty() || secret.isEmpty()) { error.setText("Enter your email address and password."); return; }
                 if (id.length() > 320 || secret.length() > 4096) { error.setText("Check your login details."); return; }
-                prefs.edit().putBoolean("savedLoginSetupSeen", true).apply();
                 dialog.dismiss(); startLogin(id, secret, "", true);
             });
         });
@@ -430,7 +445,7 @@ public final class MainActivity extends Activity {
             if (which == 0) {
                 String identifier = "";
                 try { CredentialVault.Login login = vault.read(); if (login != null) identifier = login.identifier; } catch (Exception ignored) {}
-                showSavedLoginDialog(false, identifier);
+                showSavedLoginDialog(identifier);
             } else if (which == 1) {
                 new AlertDialog.Builder(this).setTitle("Forget saved password?")
                     .setMessage("Automatic sign-in will stop. Your current Ark session stays signed in until it expires.")
@@ -445,7 +460,7 @@ public final class MainActivity extends Activity {
             else if (which == 4) {
                 boolean chrome = !prefs.getBoolean("chrome", false); prefs.edit().putBoolean("chrome", chrome).apply();
                 status.setText(chrome ? "Chrome entry needs its own sign-in and door choice. Automatic Main Door selection stays inside Gym Now." : "Entry stays in Gym Now and Main Door is selected automatically.");
-            } else new AlertDialog.Builder(this).setTitle("Gym Now · 0.3.2 · unofficial")
+            } else new AlertDialog.Builder(this).setTitle("Gym Now · 0.3.3 · unofficial")
                 .setMessage("Saved login is optional. Your email and password are encrypted on this phone with an Android Keystore key after Ark verifies them. Login requests go directly to api.arkkies.com over HTTPS. No helper server, analytics or cloud credential backup is used. Account lets you forget the password or sign out. Existing Ark sessions are reused; an expired session gets one automatic login attempt per launch. Main Door selection and booking stay as before. Unlock remains on Ark’s page.")
                 .setPositiveButton("OK", null).show();
         }).show();
@@ -482,6 +497,9 @@ public final class MainActivity extends Activity {
     }
     @Override protected void onPause() { super.onPause(); CookieManager.getInstance().flush(); }
     @Override protected void onDestroy() {
-        destroyed = true; resetLogin(); handler.removeCallbacksAndMessages(null); if (web != null) web.destroy(); super.onDestroy();
+        destroyed = true; resetLogin(); handler.removeCallbacksAndMessages(null);
+        if (gymDialog != null) gymDialog.dismiss();
+        if (web != null) web.destroy();
+        super.onDestroy();
     }
 }

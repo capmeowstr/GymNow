@@ -22,6 +22,9 @@ public final class AppPolicy {
     public static boolean validOutlet(String value) {
         return value != null && value.matches("[A-Z0-9]{6,16}");
     }
+    public static String bookingStartUrl(String outlet) {
+        return validOutlet(outlet) ? "https://arkkies.com/portal/outlet?outlet-id=" + outlet : null;
+    }
     public static boolean validBookingId(String value) {
         return value != null && value.matches("[A-Za-z0-9_-]{1,160}");
     }

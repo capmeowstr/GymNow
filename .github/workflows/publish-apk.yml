@@ -31,8 +31,8 @@ jobs:
             exit 0
           fi
           apk=Gym_Now_v0_3_2.apk
-          gh api -H 'Accept: application/vnd.github.raw+json' \
-            "repos/$GITHUB_REPOSITORY/contents/downloads/$apk?ref=$RELEASE_REF" > "$apk"
+          gh api "repos/$GITHUB_REPOSITORY/git/blobs/aec17033718771a73f78f2dea77f38b1838f66be" --jq .content \
+            | base64 --decode > "$apk"
           printf '%s  %s\n' "$APK_SHA256" "$apk" | sha256sum --check
           cat > release-notes.md <<'NOTES'
           - Hand-drawn launcher icon and an illustrated quick start.

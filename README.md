@@ -1,9 +1,9 @@
-# Gym Now for Android — v0.3.2
+# Gym Now for Android
 
 ![Gym Now launcher icon](./res/mipmap-xxxhdpi/ic_gym_now.png)
 
 An unofficial Ark Grit gym booking helper for Android 8.0 or later and a current
-Android System WebView. Version 0.3.2 updates the launcher icon.
+Android System WebView.
 
 ## Get the app
 
@@ -15,7 +15,7 @@ update from that version.
 
 To build a local APK, follow [Build from source](#build-from-source).
 
-## Use Gym Now
+## Use the v0.3.2 download
 
 ![Three-panel Gym Now tutorial showing sign-in, gym selection, and Book now](./docs/gym-now-quick-start.png)
 
@@ -42,9 +42,19 @@ To opt in or change your saved login later, choose
 - **Chrome:** optional external Remote Entry. Chrome uses a separate sign-in;
   saved passwords and automatic Main Door selection apply inside Gym Now.
 
+## What changed in v0.3.3
+
+The source builds v0.3.3. The signed download above is v0.3.2.
+
+- Choose your gym on first launch. The app waits for a selection before starting a booking.
+- Tap **Book now** to open Ark’s website for sign-in. **Account → Save Ark login**
+  is available if you choose to save your login on this phone.
+- Your gym stays selected for later launches. The booking shortcut checks for a
+  current booking before creating one.
+
 ## Saved-password behavior
 
-The first-time native form saves only after successful authentication. Requests
+The optional saved-login form saves only after successful authentication. Requests
 follow Ark's ordinary browser login protocol: obtain a fresh login flow and
 CSRF token, submit the password to the exact official HTTPS login endpoint,
 then confirm `/sessions/whoami`. Both the current `identifier` field returned
@@ -119,7 +129,7 @@ Requirements: Linux x86-64, Java/JDK 17+, Python 3 and Node.js.
 Run `python3 build.py`. It downloads pinned Android platform/build tools from
 Google, verifies their checksums, runs tests and produces the signed APK. Set
 `GYM_NOW_TOOLCHAIN` to reuse an existing verified tool directory. No Gradle or
-bundled third-party runtime is required.
+bundled third-party runtime is required. Run `python3 build.py --unsigned` to build an aligned APK for release signing.
 
 The shared source archive contains no private signing key. Building it without
 the original private `.signing` directory generates a new local signing key,
